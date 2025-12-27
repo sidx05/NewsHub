@@ -1,7 +1,44 @@
 // src/lib/api.ts
-const API_HOST = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
-// Backend public routes are mounted under /api/public/* in the server
-const PUBLIC_BASE = `${API_HOST}/api/public`;
+// Prefer configured host, but avoid mixed-content and localhost leaks in production.
+const configuredHost = process.env.NEXT_PUBLIC_API_URL?.trim();
+const vercelHost = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+
+function isLocalHost(url: string | undefined) {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return ['localhost', '127.0.0.1'].includes(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function resolveApiHost() {
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin;
+    if (!configuredHost) return origin;
+
+    const configuredIsLocal = isLocalHost(configuredHost);
+    const originIsHttps = origin.startsWith('https://');
+    const configuredIsHttp = configuredHost.startsWith('http://');
+
+    // If the page is https but API host is http, prefer same-origin to avoid mixed-content failures.
+    if (originIsHttps && configuredIsHttp) return origin;
+    // If env points to localhost but we are on a non-localhost origin, use the current origin.
+    if (configuredIsLocal && !isLocalHost(origin)) return origin;
+
+    return configuredHost;
+  }
+
+  // Server-side: favor explicit config, then deployment host, finally local dev.
+  return configuredHost || vercelHost || 'http://localhost:3000';
+}
+
+const API_HOST = resolveApiHost();
+
+// Backend public routes are mounted under /api/public/* in the server. If we do not have an
+// absolute host, keep the path relative so it works in serverless environments.
+const PUBLIC_BASE = API_HOST ? `${API_HOST}/api/public` : `/api/public`;
 
 // Simple in-memory cache with TTL
 const cache = new Map<string, { data: any; expires: number }>();

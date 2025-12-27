@@ -58,12 +58,11 @@ export default function HomePage() {
     const fetchLatestNews = async () => {
       try {
         setLatestNewsLoading(true);
-        const response = await fetch('/api/news/trending?limit=15');
+        const response = await fetch('/api/news/latest?lang=en&limit=15');
         const data = await response.json();
         if (mounted && data.success && data.articles && data.articles.length > 0) {
           setRssLatestNews(data.articles);
         } else if (mounted && data.articles) {
-          // Even if empty, clear the old data
           setRssLatestNews([]);
         }
       } catch (error) {

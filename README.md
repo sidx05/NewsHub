@@ -107,20 +107,3 @@ This scaffold includes a comprehensive set of modern web development tools:
 ---
 
 Built with ❤️ for the developer community.
-
-## Admin: Add RSS Sources and Scrape
-
-You can add new RSS feeds directly from the admin panel. These are saved to MongoDB and will be scraped by the backend job.
-
-Steps:
-
-1) Open the admin panel at /admin and click the "Sources" tab.
-2) Enter Name, Website URL, RSS feed URL, pick a Language and (optionally) a Category, then click "Add source".
-3) To ingest articles from the new source, run the scraper from the backend folder:
-
-```powershell
-cd backend
-npm run scrape
-```
-
-The scraper reads all active sources from the database (including those you add via the admin UI) and saves new articles.
